@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ward Report Generator</title>
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <h1>Ward Report Generator</h1>
+  <div class="topbar-actions">
+    <button id="btnPdf" class="btn btn-primary" type="button">Download PDF (A4)</button>
+    <button id="btnPrint" class="btn" type="button">Print</button>
+    <button id="btnReset" class="btn btn-ghost" type="button">Reset</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="card">
+    <h2>Report Details</h2>
+    <div class="grid">
+      <label>Institution / Hospital Name
+        <input id="fInstitution" type="text" placeholder="e.g. District General Hospital" />
+      </label>
+      <label>Department / Unit
+        <input id="fDepartment" type="text" placeholder="e.g. Paediatrics" />
+      </label>
+      <label>Report Title
+        <input id="fReportTitle" type="text" placeholder="e.g. Monthly Ward Report" />
+      </label>
+      <label>Month
+        <select id="fMonth"></select>
+      </label>
+      <label>Year
+        <input id="fYear" type="number" min="1900" max="2200" step="1" />
+      </label>
+      <label>Prepared By
+        <input id="fPreparedBy" type="text" placeholder="e.g. Ward In-charge" />
+      </label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Table 1 &mdash; Ward-wise Details</h2>
+      <div class="card-actions">
+        <button id="btnAddRow" class="btn btn-sm" type="button">+ Add Ward</button>
+      </div>
+    </div>
+    <p class="hint">Type the numbers. Everything else (totals, Table 2, chart, final summary) is calculated automatically.</p>
+
+    <div class="table-scroll">
+      <table class="grid-table" id="wardTable">
+        <thead>
+          <tr>
+            <th class="col-ward">Ward No</th>
+            <th>Direct Admission</th>
+            <th>Indirect Admission</th>
+            <th>Discharge</th>
+            <th>On Treatment</th>
+            <th>Death</th>
+            <th class="col-act"></th>
+          </tr>
+        </thead>
+        <tbody id="wardBody"></tbody>
+        <tfoot>
+          <tr class="total-row">
+            <th>Total</th>
+            <td id="tDirect">0</td>
+            <td id="tIndirect">0</td>
+            <td id="tDischarge">0</td>
+            <td id="tOnTreatment">0</td>
+            <td id="tDeath">0</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <p id="balanceNote" class="balance"></p>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Table 2 &mdash; Total Summary</h2>
+      <div class="card-actions">
+        <label class="switch">
+          <input id="autoTable2" type="checkbox" checked />
+          <span>Auto (from Table 1)</span>
+        </label>
+        <button id="btnSyncT2" class="btn btn-sm" type="button">Copy from Table 1</button>
+      </div>
+    </div>
+    <p class="hint">Uncheck <strong>Auto</strong> if you want to type different numbers here.</p>
+
+    <div class="table-scroll">
+      <table class="grid-table t2">
+        <thead>
+          <tr>
+            <th>Total Admission</th>
+            <th>Discharge</th>
+            <th>On Treatment</th>
+            <th>Death</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input class="t2-input" data-key="admission" type="number" min="0" step="1" /></td>
+            <td><input class="t2-input" data-key="discharge" type="number" min="0" step="1" /></td>
+            <td><input class="t2-input" data-key="onTreatment" type="number" min="0" step="1" /></td>
+            <td><input class="t2-input" data-key="death" type="number" min="0" step="1" /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Bar Chart</h2>
+    <div class="chart-box">
+      <canvas id="reportChart" width="900" height="430"></canvas>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Final Summary</h2>
+    <div class="tiles">
+      <div class="tile"><span class="tile-label">Total Admission</span><span class="tile-value" id="sAdmission">0</span><span class="tile-sub" id="sAdmissionSub">Direct + Indirect</span></div>
+      <div class="tile"><span class="tile-label">Discharged</span><span class="tile-value" id="sDischarge">0</span><span class="tile-sub" id="sDischargeSub">&nbsp;</span></div>
+      <div class="tile"><span class="tile-label">On Treatment</span><span class="tile-value" id="sOnTreatment">0</span><span class="tile-sub">&nbsp;</span></div>
+      <div class="tile tile-danger"><span class="tile-label">Death</span><span class="tile-value" id="sDeath">0</span><span class="tile-sub">&nbsp;</span></div>
+    </div>
+    <label class="block">Remarks / Notes (optional, appears in PDF)
+      <textarea id="fRemarks" rows="3" placeholder="Any extra notes for the report..."></textarea>
+    </label>
+  </section>
+
+  <p class="saved" id="savedMsg">Saved on this device</p>
+</main>
+
+<script src="vendor/chart.umd.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script src="js/app.js"></script>
+<script src="js/pdf.js"></script>
+</body>
+</html>
