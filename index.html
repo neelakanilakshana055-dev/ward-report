@@ -204,9 +204,8 @@ textarea { resize: vertical; }
 }
 .summary-list li:last-child { border-bottom: none; }
 .summary-list li:nth-child(even) { background: #f8fafc; }
-.summary-list span { flex: 1; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--muted); }
-.summary-list i { font-style: normal; font-size: 15px; color: var(--muted); }
-.summary-list strong { font-size: 22px; font-weight: 700; min-width: 56px; text-align: right; }
+.summary-list span { flex: 0 0 auto; min-width: 152px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--muted); }
+.summary-list strong { font-size: 22px; font-weight: 700; min-width: 46px; text-align: left; }
 .summary-list strong.danger { color: var(--danger); }
 
 .saved { text-align: center; color: var(--muted); font-size: 12.5px; margin: 4px 0 24px; }
@@ -338,10 +337,10 @@ textarea { resize: vertical; }
   <section class="card">
     <h2>Final Summary</h2>
     <ul class="summary-list">
-      <li><span>Total Admission</span><i>-</i><strong id="sAdmission">0</strong></li>
-      <li><span>Discharged</span><i>-</i><strong id="sDischarge">0</strong></li>
-      <li><span>On Treatment</span><i>-</i><strong id="sOnTreatment">0</strong></li>
-      <li><span>Death</span><i>-</i><strong id="sDeath" class="danger">0</strong></li>
+      <li><span>Total Admission</span><strong id="sAdmission">0</strong></li>
+      <li><span>Discharged</span><strong id="sDischarge">0</strong></li>
+      <li><span>On Treatment</span><strong id="sOnTreatment">0</strong></li>
+      <li><span>Death</span><strong id="sDeath" class="danger">0</strong></li>
     </ul>
     <p class="hint">Each figure = Table 1 total + Neonatal Admission.</p>
     <label class="block">Remarks / Notes (optional, appears in PDF)
@@ -1395,8 +1394,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       theme: "plain",
       styles: { font: "helvetica", fontSize: 12, cellPadding: 2.9, lineWidth: 0, lineColor: [255, 255, 255] },
       columnStyles: {
-        0: { cellWidth: 120, halign: "left", fontStyle: "bold", textColor: INK, fillColor: TINT },
-        1: { cellWidth: 66, halign: "right", fontStyle: "bold", fontSize: 14.5, textColor: BRAND }
+        0: { cellWidth: 44, halign: "left", fontStyle: "bold", textColor: INK, fillColor: TINT },
+        1: { cellWidth: 22, halign: "left", fontStyle: "bold", fontSize: 14.5, textColor: BRAND }
       },
       didParseCell: function (data) {
         if (data.column.index === 1 && data.row.index === 3) data.cell.styles.textColor = DANGER;
