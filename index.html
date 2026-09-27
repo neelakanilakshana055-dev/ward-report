@@ -188,9 +188,8 @@ textarea { resize: vertical; }
 }
 .summary-list li {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: baseline;
+  gap: 10px;
   padding: 10px 14px;
   border-bottom: 1px solid var(--line);
   background: #fff;
@@ -198,7 +197,8 @@ textarea { resize: vertical; }
 .summary-list li:last-child { border-bottom: none; }
 .summary-list li:nth-child(even) { background: #f8fafc; }
 .summary-list span { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--muted); }
-.summary-list strong { font-size: 22px; font-weight: 700; }
+.summary-list em { flex: 1; text-align: right; font-style: normal; font-size: 12.5px; color: var(--muted); }
+.summary-list strong { font-size: 22px; font-weight: 700; min-width: 56px; text-align: right; }
 .summary-list strong.danger { color: var(--danger); }
 
 .saved { text-align: center; color: var(--muted); font-size: 12.5px; margin: 4px 0 24px; }
@@ -290,13 +290,13 @@ textarea { resize: vertical; }
       <h2>Neonatal Admission</h2>
       <div class="card-actions">
         <label class="switch">
-          <input id="autoTable2" type="checkbox" checked />
-          <span>Auto (from Table 1)</span>
+          <input id="autoTable2" type="checkbox" />
+          <span>Auto (copy from Table 1)</span>
         </label>
         <button id="btnSyncT2" class="btn btn-sm" type="button">Copy from Table 1</button>
       </div>
     </div>
-    <p class="hint">Uncheck <strong>Auto</strong> if you want to type different numbers here.</p>
+    <p class="hint">Type the neonatal figures here. These are <strong>added</strong> to the Table 1 figures in the final summary.</p>
 
     <div class="table-scroll">
       <table class="grid-table t2">
@@ -330,12 +330,12 @@ textarea { resize: vertical; }
   <section class="card">
     <h2>Final Summary</h2>
     <ul class="summary-list">
-      <li><span>Total Admission</span><strong id="sAdmission">0</strong></li>
-      <li><span>Discharged</span><strong id="sDischarge">0</strong></li>
-      <li><span>On Treatment</span><strong id="sOnTreatment">0</strong></li>
-      <li><span>Death</span><strong id="sDeath" class="danger">0</strong></li>
+      <li><span>Total Admission</span><em id="bAdmission">0 + 0</em><strong id="sAdmission">0</strong></li>
+      <li><span>Discharged</span><em id="bDischarge">0 + 0</em><strong id="sDischarge">0</strong></li>
+      <li><span>On Treatment</span><em id="bOnTreatment">0 + 0</em><strong id="sOnTreatment">0</strong></li>
+      <li><span>Death</span><em id="bDeath">0 + 0</em><strong id="sDeath" class="danger">0</strong></li>
     </ul>
-    <p class="hint" id="sAdmissionSub">Direct 0 + Indirect 0</p>
+    <p class="hint">Each figure = Table 1 total + Neonatal Admission.</p>
     <label class="block">Remarks / Notes (optional, appears in PDF)
       <textarea id="fRemarks" rows="3" placeholder="Any extra notes for the report..."></textarea>
     </label>
@@ -784,7 +784,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "wardReport.v2";
+  var STORAGE_KEY = "wardReport.v3";
   var MONTHS = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
 
@@ -796,7 +796,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     },
     wards: [],
     table2: { admission: 0, discharge: 0, onTreatment: 0, death: 0 },
-    table2Auto: true
+    table2Auto: false
   };
 
   var els = {};
@@ -877,8 +877,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function totals2() {
-    var t1 = totalsTable1();
     if (state.table2Auto) {
+      var t1 = totalsTable1();
       return {
         admission: t1.direct + t1.indirect,
         discharge: t1.discharge,
@@ -891,6 +891,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       discharge: num(state.table2.discharge),
       onTreatment: num(state.table2.onTreatment),
       death: num(state.table2.death)
+    };
+  }
+
+  /* Final summary = Table 1 totals + Neonatal Admission */
+  function grandTotals() {
+    var t1 = totalsTable1();
+    var t2 = totals2();
+    return {
+      admission: t1.direct + t1.indirect + t2.admission,
+      discharge: t1.discharge + t2.discharge,
+      onTreatment: t1.onTreatment + t2.onTreatment,
+      death: t1.death + t2.death
     };
   }
 
@@ -949,7 +961,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     updateSummary(t1, t2);
     updateCharts(t1);
   }
-
   function setT2Inputs(t2) {
     els.t2Inputs.admission.value = state.table2Auto ? t2.admission : (state.table2.admission || "");
     els.t2Inputs.discharge.value = state.table2Auto ? t2.discharge : (state.table2.discharge || "");
@@ -961,12 +972,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function updateSummary(t1, t2) {
-    els.sAdmission.textContent = t2.admission;
-    els.sDischarge.textContent = t2.discharge;
-    els.sOnTreatment.textContent = t2.onTreatment;
-    els.sDeath.textContent = t2.death;
-    els.sAdmissionSub.textContent = "Total Admission = Direct Admission (" + t1.direct +
-      ") + Indirect Admission (" + t1.indirect + ")";
+    var g = grandTotals();
+    els.sAdmission.textContent = g.admission;
+    els.sDischarge.textContent = g.discharge;
+    els.sOnTreatment.textContent = g.onTreatment;
+    els.sDeath.textContent = g.death;
+    els.bAdmission.textContent = (t1.direct + t1.indirect) + " + " + t2.admission;
+    els.bDischarge.textContent = t1.discharge + " + " + t2.discharge;
+    els.bOnTreatment.textContent = t1.onTreatment + " + " + t2.onTreatment;
+    els.bDeath.textContent = t1.death + " + " + t2.death;
   }
 
   function updateTitlePreview() {
@@ -1116,11 +1130,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       state.wards = [];
       for (var i = 0; i < 5; i++) state.wards.push(blankWard());
       state.table2 = { admission: 0, discharge: 0, onTreatment: 0, death: 0 };
-      state.table2Auto = true;
+      state.table2Auto = false;
       els.fMonth.value = String(state.meta.month);
       els.fYear.value = state.meta.year;
       els.fRemarks.value = "";
-      els.autoTable2.checked = true;
+      els.autoTable2.checked = false;
       updateTitlePreview();
       renderWards();
       refreshTotals();
@@ -1131,7 +1145,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   function collectReport() {
     var t1 = totalsTable1();
-    var t2 = totals2();
     return {
       title: reportTitle(),
       period: MONTHS[state.meta.month] + " " + state.meta.year,
@@ -1144,7 +1157,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         };
       }),
       t1: t1,
-      t2: t2
+      t2: totals2(),
+      total: grandTotals()
     };
   }
 
@@ -1158,8 +1172,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       titlePreview: $("titlePreview"),
       tDirect: $("tDirect"), tIndirect: $("tIndirect"), tDischarge: $("tDischarge"),
       tOnTreatment: $("tOnTreatment"), tDeath: $("tDeath"),
-      sAdmission: $("sAdmission"), sAdmissionSub: $("sAdmissionSub"),
-      sDischarge: $("sDischarge"), sOnTreatment: $("sOnTreatment"), sDeath: $("sDeath"),
+      sAdmission: $("sAdmission"), bAdmission: $("bAdmission"),
+      sDischarge: $("sDischarge"), bDischarge: $("bDischarge"),
+      sOnTreatment: $("sOnTreatment"), bOnTreatment: $("bOnTreatment"),
+      sDeath: $("sDeath"), bDeath: $("bDeath"),
       fMonth: $("fMonth"), fYear: $("fYear"), fRemarks: $("fRemarks"),
       autoTable2: $("autoTable2"),
       btnAddRow: $("btnAddRow"), btnSyncT2: $("btnSyncT2"),
@@ -1238,6 +1254,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       .replace(/[\u201c\u201d]/g, '"').replace(/[\u2013\u2014]/g, "-").replace(/[^\x00-\xFF]/g, "");
   }
 
+  function caps(text) {
+    return safe(text).toUpperCase();
+  }
+
   function fileSlug(s) {
     return String(s || "report").toLowerCase().replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") || "report";
@@ -1250,7 +1270,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
     doc.setTextColor.apply(doc, INK);
-    doc.text(safe(r.title).toUpperCase(), mid, y, { align: "center" });
+    doc.text(caps(r.title), mid, y, { align: "center" });
     y += 4;
 
     doc.setDrawColor.apply(doc, BRAND);
@@ -1263,7 +1283,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor.apply(doc, INK);
-    doc.text(safe(text), PAGE.m, y);
+    doc.text(caps(text), PAGE.m, y);
     doc.setDrawColor.apply(doc, [226, 232, 240]);
     doc.setLineWidth(0.3);
     doc.line(PAGE.m, y + 1.8, PAGE.w - PAGE.m, y + 1.8);
@@ -1298,12 +1318,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function table1(doc, r, y) {
-    var head = [["Ward No", "Direct Admission", "Indirect Admission", "Discharge", "On Treatment", "Death"]];
+    var head = [["WARD NO", "DIRECT ADMISSION", "INDIRECT ADMISSION", "DISCHARGE", "ON TREATMENT", "DEATH"]];
     var body = r.wards.map(function (w) {
       return [w.no, w.direct, w.indirect, w.discharge, w.onTreatment, w.death];
     });
-    var t = r.t1;
-    body.push(["Total", t.direct, t.indirect, t.discharge, t.onTreatment, t.death]);
 
     doc.autoTable({
       startY: y,
@@ -1316,12 +1334,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       columnStyles: {
         0: { cellWidth: 22, halign: "center", fontStyle: "bold" },
         1: { cellWidth: 30.4 }, 2: { cellWidth: 30.4 }, 3: { cellWidth: 28 }, 4: { cellWidth: 32 }, 5: { cellWidth: 22.2 }
-      },
-      didParseCell: function (data) {
-        if (data.section === "body" && data.row.index === body.length - 1) {
-          data.cell.styles.fillColor = TINT;
-          data.cell.styles.fontStyle = "bold";
-        }
       }
     });
     return doc.lastAutoTable.finalY + 5;
@@ -1331,7 +1343,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     y = sectionTitle(doc, "NEONATAL ADMISSION", y);
     doc.autoTable({
       startY: y,
-      head: [["Total Admission", "Discharge", "On Treatment", "Death"]],
+      head: [["TOTAL ADMISSION", "DISCHARGE", "ON TREATMENT", "DEATH"]],
       body: [[r.t2.admission, r.t2.discharge, r.t2.onTreatment, r.t2.death]],
       margin: { left: PAGE.m, right: PAGE.m },
       theme: "grid",
@@ -1343,14 +1355,24 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function finalList(doc, r, y) {
-    y = ensureSpace(doc, y, 40);
+    y = ensureSpace(doc, y, 56);
     y = sectionTitle(doc, "SUMMARY", y);
 
+    var t1 = r.t1;
+    var t2 = r.t2;
+    var t1Admission = t1.direct + t1.indirect;
+    var g = r.total || {
+      admission: t1Admission + t2.admission,
+      discharge: t1.discharge + t2.discharge,
+      onTreatment: t1.onTreatment + t2.onTreatment,
+      death: t1.death + t2.death
+    };
+
     var rows = [
-      ["TOTAL ADMISSION", r.t2.admission],
-      ["DISCHARGED", r.t2.discharge],
-      ["ON TREATMENT", r.t2.onTreatment],
-      ["DEATH", r.t2.death]
+      ["TOTAL ADMISSION", g.admission],
+      ["DISCHARGED", g.discharge],
+      ["ON TREATMENT", g.onTreatment],
+      ["DEATH", g.death]
     ];
 
     doc.autoTable({
@@ -1367,31 +1389,42 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         if (data.column.index === 1 && data.row.index === 3) data.cell.styles.textColor = DANGER;
       }
     });
-    y = doc.lastAutoTable.finalY + 3;
+    y = doc.lastAutoTable.finalY + 3.5;
+
+    var notes = [
+      "TOTAL ADMISSION = TABLE 1 (DIRECT " + t1.direct + " + INDIRECT " + t1.indirect +
+        ") + NEONATAL ADMISSION " + t2.admission + " = " + g.admission,
+      "DISCHARGED = TABLE 1 " + t1.discharge + " + NEONATAL ADMISSION " + t2.discharge + " = " + g.discharge,
+      "ON TREATMENT = TABLE 1 " + t1.onTreatment + " + NEONATAL ADMISSION " + t2.onTreatment + " = " + g.onTreatment,
+      "DEATH = TABLE 1 " + t1.death + " + NEONATAL ADMISSION " + t2.death + " = " + g.death
+    ];
+    var lines = [];
+    notes.forEach(function (note) {
+      doc.splitTextToSize(caps(note), CONTENT_W).forEach(function (line) { lines.push(line); });
+    });
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.5);
+    doc.setFontSize(7.5);
     doc.setTextColor.apply(doc, MUTED);
-    doc.text(safe("Total Admission = Direct Admission (" + r.t1.direct +
-      ") + Indirect Admission (" + r.t1.indirect + ") = " + r.t2.admission), PAGE.m, y);
-    return y + 5;
+    doc.text(lines, PAGE.m, y, { lineHeightFactor: 1.3 });
+    return y + lines.length * 3.5 + 2;
   }
 
   function remarks(doc, r, y) {
     if (!r.remarks) return y;
     y = ensureSpace(doc, y, 20);
-    y = sectionTitle(doc, "Remarks", y);
+    y = sectionTitle(doc, "REMARKS", y);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor.apply(doc, INK);
-    var lines = doc.splitTextToSize(safe(r.remarks), CONTENT_W);
+    var lines = doc.splitTextToSize(caps(r.remarks), CONTENT_W);
     doc.text(lines, PAGE.m, y);
     return y + lines.length * 4.4 + 4;
   }
 
   function footers(doc) {
     var total = doc.getNumberOfPages();
-    var stamp = new Date().toLocaleString();
+    var stamp = new Date().toLocaleString().toUpperCase();
     for (var p = 1; p <= total; p++) {
       doc.setPage(p);
       doc.setDrawColor(226, 232, 240);
@@ -1400,8 +1433,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       doc.setTextColor.apply(doc, MUTED);
-      doc.text("Generated on " + stamp, PAGE.m, PAGE.h - PAGE.m + 5.5);
-      doc.text("Page " + p + " of " + total, PAGE.w - PAGE.m, PAGE.h - PAGE.m + 5.5, { align: "right" });
+      doc.text("GENERATED ON " + stamp, PAGE.m, PAGE.h - PAGE.m + 5.5);
+      doc.text("PAGE " + p + " OF " + total, PAGE.w - PAGE.m, PAGE.h - PAGE.m + 5.5, { align: "right" });
     }
   }
 
