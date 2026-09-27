@@ -146,7 +146,7 @@ textarea { resize: vertical; }
 .grid-table thead th.col-ward, .grid-table td:first-child { min-width: 92px; }
 .grid-table thead th.col-act, .grid-table td.col-act { width: 44px; min-width: 44px; }
 .grid-table input { padding: 7px 6px; text-align: center; }
-.grid-table input.ward-name { text-align: left; font-weight: 600; }
+.grid-table td.ward-no { font-weight: 700; color: #334155; min-width: 64px; }
 .grid-table .total-row th,
 .grid-table .total-row td {
   background: #f8fafc;
@@ -178,25 +178,28 @@ textarea { resize: vertical; }
 .chart-box { position: relative; height: 320px; }
 @media (max-width: 640px) { .chart-box { height: 260px; } }
 
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-.tile {
+.summary-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   border: 1px solid var(--line);
-  border-left: 4px solid var(--brand);
   border-radius: 8px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background: #f8fafc;
+  overflow: hidden;
 }
-.tile-danger { border-left-color: var(--danger); }
-.tile-label { font-size: 12.5px; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: .3px; }
-.tile-value { font-size: 28px; font-weight: 700; line-height: 1.1; }
-.tile-sub { font-size: 12px; color: var(--muted); }
+.summary-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+.summary-list li:last-child { border-bottom: none; }
+.summary-list li:nth-child(even) { background: #f8fafc; }
+.summary-list span { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--muted); }
+.summary-list strong { font-size: 22px; font-weight: 700; }
+.summary-list strong.danger { color: var(--danger); }
 
 .saved { text-align: center; color: var(--muted); font-size: 12.5px; margin: 4px 0 24px; }
 
@@ -204,7 +207,7 @@ textarea { resize: vertical; }
   .topbar { padding: 10px 12px; }
   .topbar h1 { font-size: 16px; }
   .card { padding: 12px; }
-  .tile-value { font-size: 24px; }
+  .summary-list strong { font-size: 19px; }
 }
 
 @media print {
@@ -229,27 +232,17 @@ textarea { resize: vertical; }
 <main class="wrap">
 
   <section class="card">
-    <h2>Report Details</h2>
+    <h2>Report Period</h2>
     <div class="grid">
-      <label>Institution / Hospital Name
-        <input id="fInstitution" type="text" placeholder="e.g. District General Hospital" />
-      </label>
-      <label>Department / Unit
-        <input id="fDepartment" type="text" placeholder="e.g. Paediatrics" />
-      </label>
-      <label>Report Title
-        <input id="fReportTitle" type="text" placeholder="e.g. Monthly Ward Report" />
-      </label>
       <label>Month
         <select id="fMonth"></select>
       </label>
       <label>Year
         <input id="fYear" type="number" min="1900" max="2200" step="1" />
       </label>
-      <label>Prepared By
-        <input id="fPreparedBy" type="text" placeholder="e.g. Ward In-charge" />
-      </label>
     </div>
+    <p class="hint">The report title will read
+      <strong id="titlePreview">TOTAL ADMISSION ON - </strong></p>
   </section>
 
   <section class="card">
@@ -259,7 +252,7 @@ textarea { resize: vertical; }
         <button id="btnAddRow" class="btn btn-sm" type="button">+ Add Ward</button>
       </div>
     </div>
-    <p class="hint">Type the numbers. Everything else (totals, Table 2, chart, final summary) is calculated automatically.</p>
+    <p class="hint">Type the numbers. Everything else (totals, Neonatal Admission, chart, final list) is calculated automatically.</p>
 
     <div class="table-scroll">
       <table class="grid-table" id="wardTable">
@@ -294,7 +287,7 @@ textarea { resize: vertical; }
 
   <section class="card">
     <div class="card-head">
-      <h2>Table 2 &mdash; Total Summary</h2>
+      <h2>Neonatal Admission</h2>
       <div class="card-actions">
         <label class="switch">
           <input id="autoTable2" type="checkbox" checked />
@@ -336,12 +329,13 @@ textarea { resize: vertical; }
 
   <section class="card">
     <h2>Final Summary</h2>
-    <div class="tiles">
-      <div class="tile"><span class="tile-label">Total Admission</span><span class="tile-value" id="sAdmission">0</span><span class="tile-sub" id="sAdmissionSub">Direct + Indirect</span></div>
-      <div class="tile"><span class="tile-label">Discharged</span><span class="tile-value" id="sDischarge">0</span><span class="tile-sub" id="sDischargeSub">&nbsp;</span></div>
-      <div class="tile"><span class="tile-label">On Treatment</span><span class="tile-value" id="sOnTreatment">0</span><span class="tile-sub">&nbsp;</span></div>
-      <div class="tile tile-danger"><span class="tile-label">Death</span><span class="tile-value" id="sDeath">0</span><span class="tile-sub">&nbsp;</span></div>
-    </div>
+    <ul class="summary-list">
+      <li><span>Total Admission</span><strong id="sAdmission">0</strong></li>
+      <li><span>Discharged</span><strong id="sDischarge">0</strong></li>
+      <li><span>On Treatment</span><strong id="sOnTreatment">0</strong></li>
+      <li><span>Death</span><strong id="sDeath" class="danger">0</strong></li>
+    </ul>
+    <p class="hint" id="sAdmissionSub">Direct 0 + Indirect 0</p>
     <label class="block">Remarks / Notes (optional, appears in PDF)
       <textarea id="fRemarks" rows="3" placeholder="Any extra notes for the report..."></textarea>
     </label>
@@ -790,18 +784,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "wardReport.v1";
+  var STORAGE_KEY = "wardReport.v2";
   var MONTHS = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
 
   var state = {
     meta: {
-      institution: "",
-      department: "",
-      reportTitle: "Monthly Ward Report",
       month: new Date().getMonth(),
       year: new Date().getFullYear(),
-      preparedBy: "",
       remarks: ""
     },
     wards: [],
@@ -822,8 +812,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return isNaN(n) || n < 0 ? 0 : n;
   }
 
-  function blankWard(i) {
-    return { name: "Ward " + (i + 1), direct: "", indirect: "", discharge: "", onTreatment: "", death: "" };
+  function blankWard() {
+    return { direct: "", indirect: "", discharge: "", onTreatment: "", death: "" };
+  }
+
+  function reportTitle() {
+    return "TOTAL ADMISSION ON " + MONTHS[state.meta.month] + " - " + state.meta.year;
   }
 
   /* ---------- state ---------- */
@@ -842,8 +836,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       }
     } catch (e) { /* ignore broken storage */ }
 
+    state.wards = state.wards.map(function (w) {
+      return {
+        direct: w.direct || "", indirect: w.indirect || "", discharge: w.discharge || "",
+        onTreatment: w.onTreatment || "", death: w.death || ""
+      };
+    });
     if (state.wards.length === 0) {
-      for (var i = 0; i < 5; i++) state.wards.push(blankWard(i));
+      for (var i = 0; i < 5; i++) state.wards.push(blankWard());
     }
   }
 
@@ -900,7 +900,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var html = "";
     state.wards.forEach(function (w, i) {
       html += '<tr data-i="' + i + '">'
-        + '<td><input class="ward-name" data-k="name" type="text" value="' + escapeAttr(w.name) + '" placeholder="Ward ' + (i + 1) + '" /></td>'
+        + '<td class="ward-no">' + (i + 1) + '</td>'
         + numCell("direct", w.direct)
         + numCell("indirect", w.indirect)
         + numCell("discharge", w.discharge)
@@ -915,11 +915,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function numCell(key, val) {
     return '<td><input data-k="' + key + '" type="number" min="0" step="1" inputmode="numeric" value="' +
       (val === "" || val === null || val === undefined ? "" : num(val)) + '" /></td>';
-  }
-
-  function escapeAttr(s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
   function refreshTotals() {
@@ -967,10 +962,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   function updateSummary(t1, t2) {
     els.sAdmission.textContent = t2.admission;
-    els.sAdmissionSub.textContent = "Direct " + t1.direct + " + Indirect " + t1.indirect;
     els.sDischarge.textContent = t2.discharge;
     els.sOnTreatment.textContent = t2.onTreatment;
     els.sDeath.textContent = t2.death;
+    els.sAdmissionSub.textContent = "Total Admission = Direct Admission (" + t1.direct +
+      ") + Indirect Admission (" + t1.indirect + ")";
+  }
+
+  function updateTitlePreview() {
+    els.titlePreview.textContent = reportTitle();
   }
 
   function chartConfig(t1, big) {
@@ -1028,35 +1028,32 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   /* ---------- events ---------- */
 
   function bindMeta() {
-    els.fInstitution.value = state.meta.institution;
-    els.fDepartment.value = state.meta.department;
-    els.fReportTitle.value = state.meta.reportTitle;
     els.fMonth.value = String(state.meta.month);
     els.fYear.value = state.meta.year;
-    els.fPreparedBy.value = state.meta.preparedBy;
     els.fRemarks.value = state.meta.remarks;
+    updateTitlePreview();
 
-    function metaHandler(el, key, cast) {
-      el.addEventListener("input", function () {
-        state.meta[key] = cast ? cast(el.value) : el.value;
-        save();
-      });
-    }
-    metaHandler(els.fInstitution, "institution");
-    metaHandler(els.fDepartment, "department");
-    metaHandler(els.fReportTitle, "reportTitle");
-    metaHandler(els.fPreparedBy, "preparedBy");
-    metaHandler(els.fRemarks, "remarks");
-    metaHandler(els.fMonth, "month", function (v) { return parseInt(v, 10) || 0; });
-    metaHandler(els.fYear, "year", function (v) { return parseInt(v, 10) || state.meta.year; });
+    els.fMonth.addEventListener("input", function () {
+      state.meta.month = parseInt(els.fMonth.value, 10) || 0;
+      updateTitlePreview();
+      save();
+    });
+    els.fYear.addEventListener("input", function () {
+      state.meta.year = parseInt(els.fYear.value, 10) || state.meta.year;
+      updateTitlePreview();
+      save();
+    });
+    els.fRemarks.addEventListener("input", function () {
+      state.meta.remarks = els.fRemarks.value;
+      save();
+    });
   }
 
   function bindWards() {
     els.wardBody.addEventListener("input", function (e) {
       var t = e.target;
       if (!t.matches("input[data-k]")) return;
-      var tr = t.closest("tr");
-      var i = parseInt(tr.getAttribute("data-i"), 10);
+      var i = parseInt(t.closest("tr").getAttribute("data-i"), 10);
       state.wards[i][t.getAttribute("data-k")] = t.value;
       save();
       refreshTotals();
@@ -1066,14 +1063,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (!e.target.classList.contains("row-del")) return;
       var i = parseInt(e.target.closest("tr").getAttribute("data-i"), 10);
       state.wards.splice(i, 1);
-      if (state.wards.length === 0) state.wards.push(blankWard(0));
+      if (state.wards.length === 0) state.wards.push(blankWard());
       renderWards();
       save();
       refreshTotals();
     });
 
     els.btnAddRow.addEventListener("click", function () {
-      state.wards.push(blankWard(state.wards.length));
+      state.wards.push(blankWard());
       renderWards();
       save();
       refreshTotals();
@@ -1092,7 +1089,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
     els.autoTable2.addEventListener("change", function () {
       state.table2Auto = els.autoTable2.checked;
-      if (state.table2Auto) { /* values shown are computed */ }
       save();
       refreshTotals();
     });
@@ -1114,35 +1110,43 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     els.btnPrint.addEventListener("click", function () { window.print(); });
 
     els.btnReset.addEventListener("click", function () {
-      if (!confirm("Clear all data and start fresh?")) return;
-      localStorage.removeItem(STORAGE_KEY);
-      state.meta = {
-        institution: "", department: "", reportTitle: "Monthly Ward Report",
-        month: new Date().getMonth(), year: new Date().getFullYear(),
-        preparedBy: "", remarks: ""
-      };
+      if (!confirm("Clear all numbers and start fresh?")) return;
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* ignore */ }
+      state.meta = { month: new Date().getMonth(), year: new Date().getFullYear(), remarks: "" };
       state.wards = [];
-      for (var i = 0; i < 5; i++) state.wards.push(blankWard(i));
+      for (var i = 0; i < 5; i++) state.wards.push(blankWard());
       state.table2 = { admission: 0, discharge: 0, onTreatment: 0, death: 0 };
       state.table2Auto = true;
-      bindMetaReset();
+      els.fMonth.value = String(state.meta.month);
+      els.fYear.value = state.meta.year;
+      els.fRemarks.value = "";
       els.autoTable2.checked = true;
+      updateTitlePreview();
       renderWards();
       refreshTotals();
     });
   }
 
-  function bindMetaReset() {
-    els.fInstitution.value = state.meta.institution;
-    els.fDepartment.value = state.meta.department;
-    els.fReportTitle.value = state.meta.reportTitle;
-    els.fMonth.value = String(state.meta.month);
-    els.fYear.value = state.meta.year;
-    els.fPreparedBy.value = state.meta.preparedBy;
-    els.fRemarks.value = state.meta.remarks;
-  }
-
   /* ---------- init ---------- */
+
+  function collectReport() {
+    var t1 = totalsTable1();
+    var t2 = totals2();
+    return {
+      title: reportTitle(),
+      period: MONTHS[state.meta.month] + " " + state.meta.year,
+      remarks: state.meta.remarks,
+      wards: state.wards.map(function (w, i) {
+        return {
+          no: i + 1,
+          direct: num(w.direct), indirect: num(w.indirect), discharge: num(w.discharge),
+          onTreatment: num(w.onTreatment), death: num(w.death)
+        };
+      }),
+      t1: t1,
+      t2: t2
+    };
+  }
 
   function init() {
     els = {
@@ -1151,13 +1155,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       printCanvas: document.createElement("canvas"),
       savedMsg: $("savedMsg"),
       balanceNote: $("balanceNote"),
+      titlePreview: $("titlePreview"),
       tDirect: $("tDirect"), tIndirect: $("tIndirect"), tDischarge: $("tDischarge"),
       tOnTreatment: $("tOnTreatment"), tDeath: $("tDeath"),
       sAdmission: $("sAdmission"), sAdmissionSub: $("sAdmissionSub"),
       sDischarge: $("sDischarge"), sOnTreatment: $("sOnTreatment"), sDeath: $("sDeath"),
-      fInstitution: $("fInstitution"), fDepartment: $("fDepartment"),
-      fReportTitle: $("fReportTitle"), fMonth: $("fMonth"), fYear: $("fYear"),
-      fPreparedBy: $("fPreparedBy"), fRemarks: $("fRemarks"),
+      fMonth: $("fMonth"), fYear: $("fYear"), fRemarks: $("fRemarks"),
       autoTable2: $("autoTable2"),
       btnAddRow: $("btnAddRow"), btnSyncT2: $("btnSyncT2"),
       btnReset: $("btnReset"), btnPrint: $("btnPrint"), btnPdf: $("btnPdf"),
@@ -1201,31 +1204,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           els.btnPdf.disabled = false;
         }
       } else {
-        alert("PDF library did not load. Please connect to the internet once and reload the page.");
+        alert("PDF library did not load. Please reload the page.");
       }
     });
-  }
-
-  function collectReport() {
-    var t1 = totalsTable1();
-    var t2 = totals2();
-    return {
-      institution: state.meta.institution,
-      department: state.meta.department,
-      title: state.meta.reportTitle || "Monthly Ward Report",
-      period: MONTHS[state.meta.month] + " " + state.meta.year,
-      preparedBy: state.meta.preparedBy,
-      remarks: state.meta.remarks,
-      wards: state.wards.map(function (w) {
-        return {
-          name: (w.name || "").trim() || "-",
-          direct: num(w.direct), indirect: num(w.indirect), discharge: num(w.discharge),
-          onTreatment: num(w.onTreatment), death: num(w.death)
-        };
-      }),
-      t1: t1,
-      t2: t2
-    };
   }
 
   window.WardReport = { collect: collectReport };
@@ -1263,34 +1244,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function drawHeader(doc, r) {
-    var y = PAGE.m + 1;
+    var y = PAGE.m + 3;
     var mid = PAGE.w / 2;
 
-    if (r.institution) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(15);
-      doc.setTextColor.apply(doc, INK);
-      doc.text(safe(r.institution).toUpperCase(), mid, y, { align: "center" });
-      y += 6;
-    }
-
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(12.5);
-    doc.setTextColor.apply(doc, BRAND);
-    doc.text(safe(r.title), mid, y, { align: "center" });
-    y += 5.5;
+    doc.setFontSize(14);
+    doc.setTextColor.apply(doc, INK);
+    doc.text(safe(r.title).toUpperCase(), mid, y, { align: "center" });
+    y += 4;
 
-    var sub = [];
-    if (r.department) sub.push("Department: " + r.department);
-    sub.push("Period: " + r.period);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor.apply(doc, MUTED);
-    doc.text(safe(sub.join("   |   ")), mid, y, { align: "center" });
-    y += 5;
-
-    doc.setDrawColor.apply(doc, [203, 213, 225]);
-    doc.setLineWidth(0.4);
+    doc.setDrawColor.apply(doc, BRAND);
+    doc.setLineWidth(0.5);
     doc.line(PAGE.m, y, PAGE.w - PAGE.m, y);
     return y + 5;
   }
@@ -1314,53 +1278,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return y;
   }
 
-  function table1(doc, r, y) {
-    var head = [["Ward No", "Direct Admission", "Indirect Admission", "Discharge", "On Treatment", "Death"]];
-    var body = r.wards.map(function (w) {
-      return [w.name, w.direct, w.indirect, w.discharge, w.onTreatment, w.death];
-    });
-    var t = r.t1;
-    body.push(["Total", t.direct, t.indirect, t.discharge, t.onTreatment, t.death]);
-
-    doc.autoTable({
-      startY: y,
-      head: head,
-      body: body,
-      margin: { left: PAGE.m, right: PAGE.m },
-      theme: "grid",
-      styles: { font: "helvetica", fontSize: 8.5, halign: "center", cellPadding: 1.6, lineColor: [214, 222, 232], lineWidth: 0.2 },
-      headStyles: { fillColor: HEAD_BG, textColor: [30, 58, 138], fontStyle: "bold", fontSize: 8, cellPadding: 1.8 },
-      columnStyles: {
-        0: { cellWidth: 44, halign: "left", fontStyle: "bold" },
-        1: { cellWidth: 28.8 }, 2: { cellWidth: 28.8 }, 3: { cellWidth: 28 }, 4: { cellWidth: 28 }, 5: { cellWidth: 28.4 }
-      },
-      didParseCell: function (data) {
-        if (data.section === "body" && data.row.index === body.length - 1) {
-          data.cell.styles.fillColor = TINT;
-          data.cell.styles.fontStyle = "bold";
-        }
-      }
-    });
-    return doc.lastAutoTable.finalY + 5;
-  }
-
-  function table2(doc, r, y) {
-    doc.autoTable({
-      startY: y,
-      head: [["Total Admission", "Discharge", "On Treatment", "Death"]],
-      body: [[r.t2.admission, r.t2.discharge, r.t2.onTreatment, r.t2.death]],
-      margin: { left: PAGE.m, right: PAGE.m },
-      theme: "grid",
-      styles: { font: "helvetica", fontSize: 12, fontStyle: "bold", halign: "center", cellPadding: 2.4, lineColor: [214, 222, 232], lineWidth: 0.2 },
-      headStyles: { fillColor: HEAD_BG, textColor: [30, 58, 138], fontSize: 9, cellPadding: 2.2 },
-      columnStyles: { 0: { cellWidth: 46.5 }, 1: { cellWidth: 46.5 }, 2: { cellWidth: 46.5 }, 3: { cellWidth: 46.5 } }
-    });
-    return doc.lastAutoTable.finalY + 3;
-  }
-
   function chartBlock(doc, chart, y) {
     var src = chart.canvas;
-    var w = 132;
+    var w = 140;
     var h = w * (src.height / src.width);
     y = ensureSpace(doc, y, h + 6);
     var x = (PAGE.w - w) / 2;
@@ -1377,21 +1297,74 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return y + h + 6;
   }
 
-  function finalSummary(doc, r, y) {
-    y = ensureSpace(doc, y, 30);
-    y = sectionTitle(doc, "Final Summary", y);
+  function table1(doc, r, y) {
+    var head = [["Ward No", "Direct Admission", "Indirect Admission", "Discharge", "On Treatment", "Death"]];
+    var body = r.wards.map(function (w) {
+      return [w.no, w.direct, w.indirect, w.discharge, w.onTreatment, w.death];
+    });
+    var t = r.t1;
+    body.push(["Total", t.direct, t.indirect, t.discharge, t.onTreatment, t.death]);
 
     doc.autoTable({
       startY: y,
-      head: [["Total Admission", "Discharged", "On Treatment", "Death"]],
+      head: head,
+      body: body,
+      margin: { left: PAGE.m, right: PAGE.m },
+      theme: "grid",
+      styles: { font: "helvetica", fontSize: 8.5, halign: "center", cellPadding: 1.6, lineColor: [214, 222, 232], lineWidth: 0.2 },
+      headStyles: { fillColor: HEAD_BG, textColor: [30, 58, 138], fontStyle: "bold", fontSize: 8, cellPadding: 1.8 },
+      columnStyles: {
+        0: { cellWidth: 22, halign: "center", fontStyle: "bold" },
+        1: { cellWidth: 30.4 }, 2: { cellWidth: 30.4 }, 3: { cellWidth: 28 }, 4: { cellWidth: 32 }, 5: { cellWidth: 22.2 }
+      },
+      didParseCell: function (data) {
+        if (data.section === "body" && data.row.index === body.length - 1) {
+          data.cell.styles.fillColor = TINT;
+          data.cell.styles.fontStyle = "bold";
+        }
+      }
+    });
+    return doc.lastAutoTable.finalY + 5;
+  }
+
+  function neonatal(doc, r, y) {
+    y = sectionTitle(doc, "NEONATAL ADMISSION", y);
+    doc.autoTable({
+      startY: y,
+      head: [["Total Admission", "Discharge", "On Treatment", "Death"]],
       body: [[r.t2.admission, r.t2.discharge, r.t2.onTreatment, r.t2.death]],
       margin: { left: PAGE.m, right: PAGE.m },
       theme: "grid",
-      styles: { font: "helvetica", fontSize: 14, fontStyle: "bold", halign: "center", cellPadding: 2.8, lineColor: [214, 222, 232], lineWidth: 0.2 },
-      headStyles: { fillColor: [226, 240, 255], textColor: [30, 58, 138], fontSize: 9, cellPadding: 2.2 },
-      columnStyles: { 0: { cellWidth: 46.5 }, 1: { cellWidth: 46.5 }, 2: { cellWidth: 46.5 }, 3: { cellWidth: 46.5 } },
+      styles: { font: "helvetica", fontSize: 12, fontStyle: "bold", halign: "center", cellPadding: 2.4, lineColor: [214, 222, 232], lineWidth: 0.2 },
+      headStyles: { fillColor: HEAD_BG, textColor: [30, 58, 138], fontSize: 9, cellPadding: 2.2 },
+      columnStyles: { 0: { cellWidth: 46.5 }, 1: { cellWidth: 46.5 }, 2: { cellWidth: 46.5 }, 3: { cellWidth: 46.5 } }
+    });
+    return doc.lastAutoTable.finalY + 5;
+  }
+
+  function finalList(doc, r, y) {
+    y = ensureSpace(doc, y, 40);
+    y = sectionTitle(doc, "SUMMARY", y);
+
+    var rows = [
+      ["TOTAL ADMISSION", r.t2.admission],
+      ["DISCHARGED", r.t2.discharge],
+      ["ON TREATMENT", r.t2.onTreatment],
+      ["DEATH", r.t2.death]
+    ];
+
+    doc.autoTable({
+      startY: y,
+      body: rows,
+      margin: { left: PAGE.m, right: PAGE.m },
+      theme: "grid",
+      styles: { font: "helvetica", fontSize: 11, cellPadding: 2.6, lineColor: [214, 222, 232], lineWidth: 0.2 },
+      columnStyles: {
+        0: { cellWidth: 130, halign: "left", fontStyle: "bold", textColor: INK, fillColor: TINT },
+        1: { cellWidth: 56, halign: "center", fontStyle: "bold", fontSize: 13 }
+      },
       didParseCell: function (data) {
-        if (data.section === "body" && data.column.index === 3) data.cell.styles.textColor = DANGER;
+        if (data.column.index === 1 && data.row.index === 3) data.cell.styles.textColor = DANGER;
       }
     });
     y = doc.lastAutoTable.finalY + 3;
@@ -1406,7 +1379,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   function remarks(doc, r, y) {
     if (!r.remarks) return y;
-    y = ensureSpace(doc, y, 22);
+    y = ensureSpace(doc, y, 20);
     y = sectionTitle(doc, "Remarks", y);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
@@ -1414,17 +1387,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     var lines = doc.splitTextToSize(safe(r.remarks), CONTENT_W);
     doc.text(lines, PAGE.m, y);
     return y + lines.length * 4.4 + 4;
-  }
-
-  function signature(doc, r, y) {
-    y = ensureSpace(doc, y, 26);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor.apply(doc, MUTED);
-    doc.text("Prepared By: " + safe(r.preparedBy || "____________________"), PAGE.m, y);
-    doc.text("Verified By: ____________________", PAGE.w / 2, y);
-    doc.text("Date: ____ / ____ / ______", PAGE.w - PAGE.m, y, { align: "right" });
-    return y;
   }
 
   function footers(doc) {
@@ -1445,23 +1407,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   window.buildPdf = function (r, chart) {
     var doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
-    doc.__fileName = "ward-report-" + fileSlug(r.period) + ".pdf";
+    doc.__fileName = "total-admission-" + fileSlug(r.period) + ".pdf";
 
     var y = drawHeader(doc, r);
-    y = sectionTitle(doc, "Table 1: Ward-wise Details", y);
+    if (chart) { y = chartBlock(doc, chart, y); }
+    y = sectionTitle(doc, "WARD-WISE DETAILS", y);
     y = table1(doc, r, y);
 
     y = ensureSpace(doc, y, 34);
-    y = sectionTitle(doc, "Table 2: Total Summary", y);
-    y = table2(doc, r, y);
+    y = neonatal(doc, r, y);
 
-    if (chart) {
-      y = chartBlock(doc, chart, ensureSpace(doc, y, 8) + 1);
-    }
-
-    y = finalSummary(doc, r, y);
-    y = remarks(doc, r, y);
-    signature(doc, r, y);
+    y = finalList(doc, r, y);
+    remarks(doc, r, y);
     footers(doc);
     return doc;
   };
