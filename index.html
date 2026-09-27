@@ -44,6 +44,14 @@ html, body {
 }
 .topbar h1 { font-size: 18px; margin: 0; font-weight: 600; }
 .topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pdf-msg {
+  flex: 1 0 100%;
+  margin: 0;
+  min-height: 16px;
+  font-size: 12.5px;
+  color: #a5f3fc;
+}
+.pdf-msg.warn { color: #fde68a; }
 
 .btn {
   border: 1px solid var(--line);
@@ -234,6 +242,7 @@ textarea { resize: vertical; }
     <button id="btnPrint" class="btn" type="button">Print</button>
     <button id="btnReset" class="btn btn-ghost" type="button">Reset</button>
   </div>
+  <p id="pdfMsg" class="pdf-msg" role="status" aria-live="polite"></p>
 </header>
 
 <main class="wrap">
@@ -1197,6 +1206,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       autoTable2: $("autoTable2"),
       btnAddRow: $("btnAddRow"), btnSyncT2: $("btnSyncT2"),
       btnReset: $("btnReset"), btnPrint: $("btnPrint"), btnPdf: $("btnPdf"),
+      pdfMsg: $("pdfMsg"),
       t2InputsHolder: document.querySelector(".grid-table.t2 tbody"),
       t2Inputs: {
         admission: document.querySelector('.t2-input[data-key="admission"]'),
@@ -1227,19 +1237,48 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     refreshTotals();
 
     els.btnPdf.addEventListener("click", function () {
-      if (typeof window.savePdf === "function") {
-        els.btnPdf.disabled = true;
-        try {
-          window.savePdf(collectReport(), printChart);
-        } catch (e) {
-          alert("Could not create the PDF: " + e.message);
-        } finally {
-          els.btnPdf.disabled = false;
-        }
-      } else {
+      if (typeof window.savePdf !== "function") {
         alert("PDF library did not load. Please reload the page.");
+        return;
+      }
+      els.btnPdf.disabled = true;
+      try {
+        var res = window.savePdf(collectReport(), printChart);
+        showPdfResult(res);
+      } catch (e) {
+        els.pdfMsg.className = "pdf-msg warn";
+        els.pdfMsg.textContent = "Could not create the PDF: " + e.message;
+      } finally {
+        els.btnPdf.disabled = false;
       }
     });
+  }
+
+  function showPdfResult(res) {
+    if (!res) return;
+    var msg, cls = "pdf-msg";
+    if (res.mode === "blocked") {
+      msg = "Pop-ups are blocked. Allow pop-ups for this site, then press Download PDF again.";
+      cls = "pdf-msg warn";
+    } else if (res.mode === "tab") {
+      msg = "PDF opened in a new tab. Use the menu in that tab to save or share it.";
+    } else {
+      msg = "PDF created: " + res.fileName + " - if nothing downloaded, tap the link.";
+    }
+    els.pdfMsg.className = cls;
+    els.pdfMsg.textContent = msg;
+
+    /* Phones sometimes ignore a programmatic download - give a tap target too */
+    if (res.url && typeof document.createElement === "function") {
+      var link = document.createElement("a");
+      link.href = res.url;
+      link.download = res.fileName;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = "Open / save the PDF";
+      link.style.marginLeft = "8px";
+      els.pdfMsg.appendChild(link);
+    }
   }
 
   window.WardReport = { collect: collectReport };
@@ -1450,11 +1489,60 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return doc;
   };
 
+  /* Mobile-safe download.
+     jsPDF's built-in save() opens a preview tab on many phones instead of
+     downloading, so we hand the file over ourselves: a real Blob + <a download>
+     works on Android Chrome, iOS 13+ Safari and desktop browsers. */
+  var lastUrl = null;
+
+  function deliver(doc) {
+    var fileName = doc.__fileName;
+    var blob = null;
+    try { blob = doc.output("blob"); } catch (e) { blob = null; }
+
+    if (blob && window.navigator && window.navigator.msSaveOrOpenBlob) {
+      window.navigator.msSaveOrOpenBlob(blob, fileName);
+      return { mode: "ms", fileName: fileName, url: "" };
+    }
+
+    if (blob && window.URL && window.URL.createObjectURL) {
+      var url = window.URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.rel = "noopener";
+      a.style.position = "fixed";
+      a.style.left = "-9999px";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { if (a.parentNode) a.parentNode.removeChild(a); }, 10000);
+      if (lastUrl) { try { window.URL.revokeObjectURL(lastUrl); } catch (e) {} }
+      lastUrl = url;
+      return { mode: "blob", fileName: fileName, url: url };
+    }
+
+    /* Last resort for very old browsers: open the PDF in a new tab */
+    var dataUrl = doc.output("datauristring");
+    var w = window.open(dataUrl, "_blank");
+    if (!w) {
+      var w2 = window.open("", "_blank");
+      if (w2) {
+        w2.document.write(
+          '<p style="font:16px sans-serif;padding:20px">Allow pop-ups for this page, ' +
+          "then press Download PDF again.</p>");
+        w2.document.close();
+      }
+      return { mode: "blocked", fileName: fileName, url: "" };
+    }
+    return { mode: "tab", fileName: fileName, url: dataUrl };
+  }
+
   window.savePdf = function (r, chart) {
     var doc = window.buildPdf(r, chart);
-    doc.save(doc.__fileName);
-    return doc.__fileName;
+    return deliver(doc);
   };
+
+  window.deliverPdf = function (doc) { return deliver(doc); };
 })();
 
 </script>
