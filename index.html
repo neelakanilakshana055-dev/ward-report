@@ -198,7 +198,7 @@ textarea { resize: vertical; }
   display: flex;
   align-items: baseline;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 7px 14px;
   border-bottom: 1px solid var(--line);
   background: #fff;
 }
@@ -1371,7 +1371,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     return doc.lastAutoTable.finalY + 5;
   }
   function finalList(doc, r, y) {
-    y = ensureSpace(doc, y, 46);
+    y = ensureSpace(doc, y, 34);
     y = sectionTitle(doc, "SUMMARY", y);
 
     var g = r.total || {
@@ -1389,7 +1389,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     ];
 
     items.forEach(function (it) {
-      y = ensureSpace(doc, y, 10);
+      y = ensureSpace(doc, y, 8);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.setTextColor.apply(doc, INK);
@@ -1398,7 +1398,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       doc.setFontSize(15);
       doc.setTextColor.apply(doc, it[2] ? DANGER : BRAND);
       doc.text(String(it[1]), PAGE.m + w, y + 0.6);
-      y += 8;
+      y += 6;
     });
     return y;
   }
