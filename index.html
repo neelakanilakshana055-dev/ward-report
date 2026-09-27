@@ -1264,6 +1264,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   var MUTED = [100, 116, 139];
   var BRAND = [13, 110, 253];
   var HEAD_BG = [239, 246, 255];
+  var TINT = [244, 247, 252];
   var DANGER = [220, 38, 38];
 
   function safe(text) {
@@ -1370,8 +1371,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     });
     return doc.lastAutoTable.finalY + 5;
   }
+  /* Frameless (no borders) summary table: even row spacing, values right aligned */
   function finalList(doc, r, y) {
-    y = ensureSpace(doc, y, 34);
+    y = ensureSpace(doc, y, 44);
     y = sectionTitle(doc, "SUMMARY", y);
 
     var g = r.total || {
@@ -1381,26 +1383,26 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       death: r.t1.death + r.t2.death
     };
 
-    var items = [
-      ["TOTAL ADMISSION", g.admission, false],
-      ["DISCHARGED", g.discharge, false],
-      ["ON TREATMENT", g.onTreatment, false],
-      ["DEATH", g.death, true]
-    ];
-
-    items.forEach(function (it) {
-      y = ensureSpace(doc, y, 8);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor.apply(doc, INK);
-      doc.text(caps(it[0]) + " - ", PAGE.m, y);
-      var w = doc.getTextWidth(caps(it[0]) + " - ");
-      doc.setFontSize(15);
-      doc.setTextColor.apply(doc, it[2] ? DANGER : BRAND);
-      doc.text(String(it[1]), PAGE.m + w, y + 0.6);
-      y += 6;
+    doc.autoTable({
+      startY: y,
+      body: [
+        ["TOTAL ADMISSION", String(g.admission)],
+        ["DISCHARGED", String(g.discharge)],
+        ["ON TREATMENT", String(g.onTreatment)],
+        ["DEATH", String(g.death)]
+      ],
+      margin: { left: PAGE.m, right: PAGE.m },
+      theme: "plain",
+      styles: { font: "helvetica", fontSize: 12, cellPadding: 2.9, lineWidth: 0, lineColor: [255, 255, 255] },
+      columnStyles: {
+        0: { cellWidth: 120, halign: "left", fontStyle: "bold", textColor: INK, fillColor: TINT },
+        1: { cellWidth: 66, halign: "right", fontStyle: "bold", fontSize: 14.5, textColor: BRAND }
+      },
+      didParseCell: function (data) {
+        if (data.column.index === 1 && data.row.index === 3) data.cell.styles.textColor = DANGER;
+      }
     });
-    return y;
+    return doc.lastAutoTable.finalY + 4;
   }
 
   function remarks(doc, r, y) {
