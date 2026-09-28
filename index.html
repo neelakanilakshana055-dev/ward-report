@@ -326,10 +326,10 @@ textarea { resize: vertical; }
         </thead>
         <tbody>
           <tr>
-            <td><input class="t2-input" data-key="admission" type="number" min="0" step="1" /></td>
-            <td><input class="t2-input" data-key="discharge" type="number" min="0" step="1" /></td>
-            <td><input class="t2-input" data-key="onTreatment" type="number" min="0" step="1" /></td>
-            <td><input class="t2-input" data-key="death" type="number" min="0" step="1" /></td>
+            <td><input class="t2-input" data-key="admission" type="text" inputmode="numeric" autocomplete="off" maxlength="7" /></td>
+            <td><input class="t2-input" data-key="discharge" type="text" inputmode="numeric" autocomplete="off" maxlength="7" /></td>
+            <td><input class="t2-input" data-key="onTreatment" type="text" inputmode="numeric" autocomplete="off" maxlength="7" /></td>
+            <td><input class="t2-input" data-key="death" type="text" inputmode="numeric" autocomplete="off" maxlength="7" /></td>
           </tr>
         </tbody>
       </table>
@@ -811,7 +811,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       remarks: ""
     },
     wards: [],
-    table2: { admission: 0, discharge: 0, onTreatment: 0, death: 0 },
+    table2: { admission: "", discharge: "", onTreatment: "", death: "" },
     table2Auto: false
   };
 
@@ -826,6 +826,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function num(v) {
     var n = parseInt(v, 10);
     return isNaN(n) || n < 0 ? 0 : n;
+  }
+
+  /* A cell may hold digits, be empty, or hold a dash meaning "no value" */
+  function cleanCell(v) {
+    var s = String(v == null ? "" : v).replace(/[^\d-]/g, "");
+    if (s === "-") return "-";
+    return s.replace(/-/g, "");
+  }
+
+  /* What the report shows in a table cell: digits, or "-" when nothing was entered */
+  function disp(v) {
+    var s = cleanCell(v);
+    if (s === "") return "-";
+    var n = parseInt(s, 10);
+    return isNaN(n) ? "-" : n;
   }
 
   function blankWard(n) {
@@ -854,6 +869,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           state.wards = Array.isArray(saved.wards) ? saved.wards : [];
           if (saved.table2) state.table2 = Object.assign(state.table2, saved.table2);
           state.table2Auto = saved.table2Auto !== false;
+          /* manual mode: the old default seed was 0 - show it as empty ("-") instead */
+          if (!state.table2Auto) {
+            ["admission", "discharge", "onTreatment", "death"].forEach(function (k) {
+              if (state.table2[k] === 0 || state.table2[k] === null) state.table2[k] = "";
+            });
+          }
         }
       }
     } catch (e) { /* ignore broken storage */ }
@@ -955,8 +976,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function numCell(key, val) {
-    return '<td><input data-k="' + key + '" type="number" min="0" step="1" inputmode="numeric" value="' +
-      (val === "" || val === null || val === undefined ? "" : num(val)) + '" /></td>';
+    return '<td><input data-k="' + key + '" type="text" inputmode="numeric" autocomplete="off" ' +
+      'maxlength="7" aria-label="' + key + '" placeholder="-" value="' + escapeAttr(cleanCell(val)) + '" /></td>';
   }
 
   function refreshTotals() {
@@ -992,10 +1013,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     updateCharts(t1);
   }
   function setT2Inputs(t2) {
-    els.t2Inputs.admission.value = state.table2Auto ? t2.admission : (state.table2.admission || "");
-    els.t2Inputs.discharge.value = state.table2Auto ? t2.discharge : (state.table2.discharge || "");
-    els.t2Inputs.onTreatment.value = state.table2Auto ? t2.onTreatment : (state.table2.onTreatment || "");
-    els.t2Inputs.death.value = state.table2Auto ? t2.death : (state.table2.death || "");
+    els.t2Inputs.admission.value = state.table2Auto ? t2.admission : cleanCell(state.table2.admission);
+    els.t2Inputs.discharge.value = state.table2Auto ? t2.discharge : cleanCell(state.table2.discharge);
+    els.t2Inputs.onTreatment.value = state.table2Auto ? t2.onTreatment : cleanCell(state.table2.onTreatment);
+    els.t2Inputs.death.value = state.table2Auto ? t2.death : cleanCell(state.table2.death);
     Array.prototype.forEach.call(els.t2InputsHolder.querySelectorAll(".t2-input"), function (i) {
       i.disabled = state.table2Auto;
     });
@@ -1091,7 +1112,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       if (!t.matches("input[data-k]")) return;
       var i = parseInt(t.closest("tr").getAttribute("data-i"), 10);
       var key = t.getAttribute("data-k");
-      state.wards[i][key] = t.value;
+      var raw = key === "label" ? t.value : cleanCell(t.value);
+      if (t.value !== raw) t.value = raw;
+      state.wards[i][key] = raw;
       save();
       if (key !== "label") refreshTotals();
     });
@@ -1122,7 +1145,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   function bindTable2() {
     els.t2InputsHolder.addEventListener("input", function (e) {
       if (!e.target.classList.contains("t2-input")) return;
-      state.table2[e.target.getAttribute("data-key")] = e.target.value;
+      var key = e.target.getAttribute("data-key");
+      var raw = cleanCell(e.target.value);
+      if (e.target.value !== raw) e.target.value = raw;
+      state.table2[key] = raw;
       save();
       updateSummary();
     });
@@ -1155,7 +1181,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       state.meta = { month: new Date().getMonth(), year: new Date().getFullYear(), remarks: "" };
       state.wards = [];
       for (var i = 0; i < 5; i++) state.wards.push(blankWard(i + 1));
-      state.table2 = { admission: 0, discharge: 0, onTreatment: 0, death: 0 };
+      state.table2 = { admission: "", discharge: "", onTreatment: "", death: "" };
       state.table2Auto = false;
       els.fMonth.value = String(state.meta.month);
       els.fYear.value = state.meta.year;
@@ -1171,6 +1197,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   function collectReport() {
     var t1 = totalsTable1();
+    var t2 = totals2();
+    var t2Cells = state.table2Auto
+      ? { admission: t2.admission, discharge: t2.discharge, onTreatment: t2.onTreatment, death: t2.death }
+      : {
+        admission: disp(state.table2.admission), discharge: disp(state.table2.discharge),
+        onTreatment: disp(state.table2.onTreatment), death: disp(state.table2.death)
+      };
+
     return {
       title: reportTitle(),
       period: MONTHS[state.meta.month] + " " + state.meta.year,
@@ -1178,12 +1212,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       wards: state.wards.map(function (w, i) {
         return {
           no: labelFor(w, i),
-          direct: num(w.direct), indirect: num(w.indirect), discharge: num(w.discharge),
-          onTreatment: num(w.onTreatment), death: num(w.death)
+          direct: disp(w.direct), indirect: disp(w.indirect), discharge: disp(w.discharge),
+          onTreatment: disp(w.onTreatment), death: disp(w.death)
         };
       }),
       t1: t1,
-      t2: totals2(),
+      t2: t2,
+      t2Cells: t2Cells,
       total: grandTotals()
     };
   }
@@ -1397,10 +1432,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   function neonatal(doc, r, y) {
     y = sectionTitle(doc, "NEONATAL ADMISSION", y);
+    var t2 = r.t2Cells || r.t2;
     doc.autoTable({
       startY: y,
       head: [["TOTAL ADMISSION", "DISCHARGE", "ON TREATMENT", "DEATH"]],
-      body: [[r.t2.admission, r.t2.discharge, r.t2.onTreatment, r.t2.death]],
+      body: [[t2.admission, t2.discharge, t2.onTreatment, t2.death]],
       margin: { left: PAGE.m, right: PAGE.m },
       theme: "grid",
       styles: { font: "helvetica", fontSize: 12, fontStyle: "bold", halign: "center", cellPadding: 2.4, lineColor: [214, 222, 232], lineWidth: 0.2 },
